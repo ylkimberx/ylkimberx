@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Advanced Grade System</title>
+
+<style>
+
+/* =========================
+   BASE
+========================= */
+
+body{
+    font-family:'Segoe UI';
+    background:#f4f6f9;
+    margin:0;
+    padding:15px;
+    background-image:url(leaves.jpg);
+}
+
+/* MAIN WRAPPER */
+.container{
+    max-width:1300px;
+    margin:auto;
+}
+
+/* TITLE */
+h1{
+    text-align:center;
+}
+
+/* =========================
+   SCROLL WRAPPER (IMPORTANT)
+========================= */
+
+.table-wrapper{
+    width:100%;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    border-radius:10px;
+}
+
+/* =========================
+   TABLE FIX
+========================= */
+
+table{
+    width:100%;
+    min-width:1000px; /* FORCE SCROLL ON CP */
+    border-collapse:collapse;
+    background:linear-gradient(135deg,#ff5722,#ffd500);
+
+    table-layout:fixed; /* prevent column break */
+}
+
+th,td{
+    padding:8px;
+    text-align:center;
+    font-size:12px;
+    overflow:hidden;
+    word-break:break-word;
+}
+
+th{
+    background:#e9eef3;
+}
+
+/* NAME COLUMN */
+.name{
+    min-width:140px;
+}
+
+/* =========================
+   INPUT PAIR FIX
+========================= */
+
+.pair{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:4px;
+    white-space:nowrap;
+}
+
+.pair input{
+    width:45px;
+    min-width:45px;
+    max-width:45px;
+
+    padding:3px;
+    border-radius:6px;
+    border:1px solid #ccc;
+    text-align:center;
+    font-size:11px;
+}
+
+.pair span{
+    font-weight:bold;
+}
+
+/* =========================
+   BUTTONS
+========================= */
+
+button{
+    border:none;
+    cursor:pointer;
+    border-radius:6px;
+}
+
+.add{
+    background:#4caf50;
+    color:white;
+    padding:6px 10px;
+    margin-bottom:10px;
+}
+
+.add-col{
+    background:#2196f3;
+    color:white;
+    padding:2px 6px;
+    font-size:11px;
+    margin-left:5px;
+}
+
+.remove{
+    background:#e53935;
+    color:white;
+    padding:4px 8px;
+}
+
+/* =========================
+   RESULT COLORS
+========================= */
+
+.result{
+    font-weight:bold;
+}
+
+.pass-row{background:#e8f5e9;}
+.fail-row{background:#ffebee;}
+
+/* =========================
+   SUMMARY
+========================= */
+
+.summary{
+    margin-top:10px;
+    background:linear-gradient(135deg,#ff5722,#ffd500);
+    padding:10px;
+    border-radius:10px;
+    display:flex;
+    justify-content:space-around;
+    flex-wrap:wrap;
+}
+
+/* =========================
+   FOOTER FIX (NO EXTRA SPACE BUG FIX)
+========================= */
+
+footer{
+    margin-top:10px;
+    text-align:center;
+}
+
+/* =========================
+   MOBILE RESPONSIVE
+========================= */
+
+@media(max-width:768px){
+
+    table{
+        min-width:900px; /* still scrollable */
+    }
+
+    .pair input{
+        width:42px;
+        min-width:42px;
+        max-width:42px;
+    }
+
+    h1{
+        font-size:18px;
+    }
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>📊 Advanced Grade System 📊</h1>
+
+<button class="add" onclick="addRow()">➕ Add Student</button>
+
+<div class="table-wrapper">
+<table>
+
+<thead>
+<tr>
+<th>Name</th>
+
+<th>Quiz (20%) <button class="add-col" onclick="addColumn('quiz')">+</button></th>
+<th>Laboratory (30%) <button class="add-col" onclick="addColumn('lab')">+</button></th>
+<th>Assignment (10%) <button class="add-col" onclick="addColumn('assign')">+</button></th>
+<th>Attendance (10%) <button class="add-col" onclick="addColumn('attend')">+</button></th>
+<th>Major Exam (30%) <button class="add-col" onclick="addColumn('exam')">+</button></th>
+
+<th>Final Grade</th>
+<th>Action</th>
+</tr>
+</thead>
+
+<tbody id="body"></tbody>
+
+</table>
+</div>
+
+<div class="summary">
+<div>Total: <span id="total">0</span></div>
+<div>Highest Average: <span id="high">0</span></div>
+<div>Lowest Average: <span id="low">0</span></div>
+</div>
+
+<!-- 🔥 FOOTER MOVED BELOW SUMMARY (NO EXTRA SPACE ISSUE) -->
+<footer>
+    <div>🌻🌴☀️😎🌻🌴☀️😎</div>
+    <div>Kimberly Soniso BSIT 3A</div>
+</footer>
+
+</div>
+
+<script>
+
+/* =========================
+   JS (UNCHANGED LOGIC)
+========================= */
+
+let structure={ quiz:1, lab:1, assign:1, attend:1, exam:1 };
+
+function limit(input){
+    let val=input.value.replace(/[^0-9]/g,"");
+    if(val.length>3) val=val.slice(0,3);
+    if(val>999) val=999;
+    input.value=val;
+}
+
+function validate(s,p){
+    if(+s.value > +p.value && p.value!==""){
+        s.classList.add("invalid");
+    }else{
+        s.classList.remove("invalid");
+    }
+}
+
+function createInputs(type){
+    let html="";
+    for(let i=0;i<structure[type];i++){
+        html+=`
+        <div class="pair">
+            <input type="number" oninput="limit(this); compute(); save()">
+            <span>/</span>
+            <input type="number" oninput="limit(this); compute(); save()">
+        </div>`;
+    }
+    return html;
+}
+
+function addRow(data={}){
+
+    let row=document.createElement("tr");
+
+    row.innerHTML=`
+    <td><input class="name" value="${data.name||""}" oninput="save()"></td>
+
+    <td class="quiz">${createInputs('quiz')}</td>
+    <td class="lab">${createInputs('lab')}</td>
+    <td class="assign">${createInputs('assign')}</td>
+    <td class="attend">${createInputs('attend')}</td>
+    <td class="exam">${createInputs('exam')}</td>
+
+    <td class="result">0</td>
+    <td><button class="remove" onclick="this.closest('tr').remove();compute();save()">X</button></td>
+    `;
+
+    document.getElementById("body").appendChild(row);
+}
+
+function addColumn(type){
+    structure[type]++;
+
+    document.querySelectorAll("."+type).forEach(td=>{
+        td.innerHTML+=`
+        <div class="pair">
+            <input type="number" oninput="limit(this); compute(); save()">
+            <span>/</span>
+            <input type="number" oninput="limit(this); compute(); save()">
+        </div>`;
+    });
+}
+
+function computeCategory(cell){
+
+    let inputs=cell.querySelectorAll("input");
+    let score=0, perfect=0;
+
+    for(let i=0;i<inputs.length;i+=2){
+
+        let s=inputs[i];
+        let p=inputs[i+1];
+
+        validate(s,p);
+
+        score+=+s.value||0;
+        perfect+=+p.value||0;
+    }
+
+    return perfect ? score/perfect : 0;
+}
+
+function compute(){
+
+    let rows=document.querySelectorAll("#body tr");
+
+    let total=0, high=0, low=100, count=0;
+
+    rows.forEach(r=>{
+
+        let quiz=computeCategory(r.querySelector(".quiz"));
+        let lab=computeCategory(r.querySelector(".lab"));
+        let assign=computeCategory(r.querySelector(".assign"));
+        let attend=computeCategory(r.querySelector(".attend"));
+        let exam=computeCategory(r.querySelector(".exam"));
+
+        let final=(quiz*0.2 + lab*0.3 + assign*0.1 + attend*0.1 + exam*0.3)*100;
+        final=+final.toFixed(2);
+
+        r.querySelector(".result").innerText=final;
+
+        r.classList.remove("pass-row","fail-row");
+
+        if(final>=75) r.classList.add("pass-row");
+        else r.classList.add("fail-row");
+
+        if(final>0){
+            total+=final;
+            count++;
+            if(final>high) high=final;
+            if(final<low) low=final;
+        }
+    });
+
+    document.getElementById("total").innerText=count;
+    document.getElementById("high").innerText=high;
+    document.getElementById("low").innerText=count?low:0;
+}
+
+function save(){}
+
+function load(){}
+
+</script>
+
+</body>
+</html>
